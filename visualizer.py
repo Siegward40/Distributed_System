@@ -126,26 +126,3 @@ class Visualizer:
 
     def run(self):
         self.root.mainloop()
-
-
-
-if __name__ == "__main__":
-
-    visualizer = Visualizer()
-
-    #visualizer.add_all_proccess({1:"P1", 2:"P2", 3:"P3"})
-    visualizer.add_all_proccess({1:"P1", 2:"P2", 3:"P3", 4:"P4"})
-
-    visualizer.add_simple_event(1)
-    visualizer.add_simple_event(1)
-    visualizer.add_simple_event(2)
-    visualizer.add_message(1,2,"m1")
-    visualizer.add_message(1,3,"m2")
-    visualizer.add_simple_event(3)
-    visualizer.add_message(3,4,"m3")
-    visualizer.add_simple_event(2)
-    visualizer.add_message(2,1,"m4")
-    visualizer.add_simple_event(4)
-    visualizer.add_message(4,1,"m5")
-
-    visualizer.run()
