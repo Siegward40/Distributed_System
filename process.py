@@ -4,16 +4,16 @@ class Process:
         self.simulator = simulator
         self.visualizer = visualizer
         self.state = 0
-        self.channels_in = {} 
-        self.channels_out = {}  
-        self.trace = [] 
+        self.channels_in = {}
+        self.channels_out = {}
+        self.trace = []
         self.snapshot_initiated = False
         self.local_state_recorded = None
         self.recorded_channels = {}
 
     def add_channel_in(self, sender_id, channel):
         self.channels_in[sender_id] = channel
-    
+
     def add_channel_out(self, receiver_id, channel):
         self.channels_out[receiver_id] = channel
 
@@ -21,7 +21,7 @@ class Process:
         if action[0] == 'compute':
             self.state += 1
             if self.visualizer:
-                self.visualizer.add_simple_event(self.id)
+                self.visualizer.add_simple_event(self)
         elif action[0] == 'send':
             receiver_id, message = action[1], action[2]
             channel = self.channels_out[receiver_id]
@@ -59,6 +59,7 @@ class Process:
             self.recorded_channels[ch].append(message)
         self.state += 1
         if self.visualizer:
-            self.visualizer.add_message(sender_id, self.id, message)
+            sender = self.simulator.processes[sender_id]
+            self.visualizer.add_message(sender, self, message)
         popped = ch.queue.popleft()
         assert popped == message

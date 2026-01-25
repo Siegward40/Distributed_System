@@ -9,7 +9,7 @@ def main():
 
     # create processes
     processes = {}
-    for i in range(1, 5):
+    for i in range(1, 8):
         p = Process(i, sim, visualizer)
         processes[i] = p
         sim.add_process(p)
@@ -47,10 +47,10 @@ def main():
         (6, ('send', 1, 'msg6')),
     ]
 
-    visualizer.add_all_proccess({1: "P1", 2: "P2", 3: "P3", 4: "P4"})
+    #visualizer.add_all_proccess({1: "P1", 2: "P2", 3: "P3", 4: "P4"})
+    visualizer.add_all_proccess({v:"P"+str(k) for k,v in processes.items()})
     sim.run()
     visualizer.run()
 
 if __name__ == "__main__":
     main()
-    

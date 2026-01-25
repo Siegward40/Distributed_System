@@ -5,7 +5,7 @@ class Visualizer:
     width = 1600
     height = 800
     max_events = 10 # max events per process line
-    display_vector_tmstps = True # else Lamport's logical timestamps will be displayed
+    display_vector_tmstps = False # else Lamport's logical timestamps will be displayed
 
     events = [chr(i) for i in range(97,123)]    #letters a to z
 
@@ -44,8 +44,8 @@ class Visualizer:
             y = (i+0.5)/nb_p * h
             self.graph_cnv.create_text(0.07 * w, y, text=v, fill ="black", font="Arial 20 bold")
             self.graph_cnv.create_line((x_start,y), (x_end,y), width=4, arrow='last')
-            self.cursors[k] = [x_start+0.5*self.process_line_width/Visualizer.max_events, y]
             self.graph_cnv.create_text(x_start, y-20, text=self._getTimestamp(k), fill ="blue", font="Arial 14")
+            self.cursors[k] = [x_start+0.5*self.process_line_width/Visualizer.max_events, y]
 
 
     def add_simple_event(self, process, event=None):  #event: str
