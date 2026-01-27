@@ -1,0 +1,6 @@
+use lamport
+P1,P2,P3,P4
+P1: 1 compute, 2 compute, 3 send P2 m1, 4 send P3 m2
+P2: 2 compute, 5 compute, 7 send P1 m4
+P3: 6 compute, 7 send P4 m3
+P4: 9 compute, 10 send P1 m5

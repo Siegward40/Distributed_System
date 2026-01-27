@@ -1,23 +1,28 @@
 import tkinter as tk
 
 class Visualizer:
+    """Tkinter interface for visualizing Global States and Distributed Snapshots of processes and their tasks."""
 
     width = 1600
     height = 800
-    max_events = 10 # max events per process line
-    display_vector_tmstps = False # else Lamport's logical timestamps will be displayed
-
-    events = [chr(i) for i in range(97,123)]    #letters a to z
+    events = [chr(i) for i in range(97,123)]        # letters a to z
+    events.extend([chr(i) for i in range(945,970)]) # greek letters
 
 
-    def __init__(self):
+    def __init__(self, display_vector_tmstps=False, max_events=10):
         self.root = tk.Tk()
         self.root.title("Chandy-Lamport Algorithm")
         self.root.geometry(f"{Visualizer.width}x{Visualizer.height}")
+        tk.Label(self.root, text="Chandy-Lamport Algorithm", font="Arial 20").pack()
+
+        self.display_vector_tmstps = display_vector_tmstps # False for Lamport's clock, True for vector clock
+        self.max_events = max_events
+
         self.graph_cnv = tk.Canvas(self.root, width=0.9*Visualizer.width, height=0.8*Visualizer.height, bg="white")
-        self.graph_cnv.pack(padx=0.05*Visualizer.width, pady=0.1*Visualizer.height)
+        self.graph_cnv.pack(padx=0.05*Visualizer.width)
         self.cnv_width = int(self.graph_cnv['width'])
         self.cnv_height = int(self.graph_cnv['height'])
+
         self.process_line_width = 0
         self.nb_events = 0
         self.process_list = []
@@ -26,7 +31,7 @@ class Visualizer:
         self.cursors = {}
 
 
-    def add_all_proccess(self, all_process:dict):
+    def set_all_proccess(self, all_process:dict):
         """Parameter is a dictionary of all process with identifier of process as key and its name as value (label)"""
         nb_p = len(all_process)
         w = self.cnv_width
@@ -45,7 +50,7 @@ class Visualizer:
             self.graph_cnv.create_text(0.07 * w, y, text=v, fill ="black", font="Arial 20 bold")
             self.graph_cnv.create_line((x_start,y), (x_end,y), width=4, arrow='last')
             self.graph_cnv.create_text(x_start, y-20, text=self._getTimestamp(k), fill ="blue", font="Arial 14")
-            self.cursors[k] = [x_start+0.5*self.process_line_width/Visualizer.max_events, y]
+            self.cursors[k] = [x_start+0.5*self.process_line_width/self.max_events, y]
 
 
     def add_simple_event(self, process, event=None):  #event: str
@@ -61,7 +66,7 @@ class Visualizer:
             self._dot(self.graph_cnv, (x,y))
             self.graph_cnv.create_text(x, y+20, text=event, fill ="black", font="Arial 14")
             self.graph_cnv.create_text(x, y-20, text=self._getTimestamp(process), fill ="blue", font="Arial 14")
-            self.cursors[process][0] += self.process_line_width/Visualizer.max_events
+            self.cursors[process][0] += self.process_line_width/self.max_events
             self.nb_events += 1
 
 
@@ -78,16 +83,16 @@ class Visualizer:
             self._dot(self.graph_cnv, (x_s,y_s))
             self.graph_cnv.create_text(x_s, y_s+20, text=events[0], fill ="black", font="Arial 14")
             self.graph_cnv.create_text(x_s, y_s-20, text=self._getTimestamp(sender), fill ="blue", font="Arial 14")
-            self.cursors[sender][0] += self.process_line_width/Visualizer.max_events
+            self.cursors[sender][0] += self.process_line_width/self.max_events
 
             # receiver event
             self._incrTimestamp(receiver, sender)
-            x_r = max(self.cursors[receiver][0], x_s+0.3*self.process_line_width/Visualizer.max_events)
+            x_r = max(self.cursors[receiver][0], x_s+0.3*self.process_line_width/self.max_events)
             y_r = self.cursors[receiver][1]
             self._dot(self.graph_cnv, (x_r,y_r))
             self.graph_cnv.create_text(x_r, y_r+20, text=events[1], fill ="black", font="Arial 14")
             self.graph_cnv.create_text(x_r, y_r-20, text=self._getTimestamp(receiver), fill ="blue", font="Arial 14")
-            self.cursors[receiver][0] = x_r + self.process_line_width/Visualizer.max_events
+            self.cursors[receiver][0] = x_r + self.process_line_width/self.max_events
 
             # message
             self.graph_cnv.create_line((x_s,y_s), (x_r,y_r), width=3, arrow='last')
@@ -105,7 +110,7 @@ class Visualizer:
 
     def _incrTimestamp(self, process, other_process=None):
         # define other_process as sender when process RECEIVE message (NOT SEND)
-        if Visualizer.display_vector_tmstps:
+        if self.display_vector_tmstps:
             if other_process:
                 for i in range(len(self.process_list)):
                     self.vector_tmstps[process][i] = max(self.vector_tmstps[process][i], self.vector_tmstps[other_process][i])
@@ -118,7 +123,7 @@ class Visualizer:
 
 
     def _getTimestamp(self, process):
-        if Visualizer.display_vector_tmstps:
+        if self.display_vector_tmstps:
             return self.vector_tmstps[process]
         else:
             return self.lamport_tmstps[process]
@@ -126,3 +131,6 @@ class Visualizer:
 
     def run(self):
         self.root.mainloop()
+
+    def destroy(self):
+        self.root.destroy()
