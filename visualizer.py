@@ -9,6 +9,8 @@ class Visualizer:
     events = [chr(i) for i in range(97,123)]        # letters a to z
     events.extend([chr(i) for i in range(945,970)]) # greek letters
 
+    timer = 2
+
 
     def __init__(self, display_vector_tmstps=False, max_events=15):
         self.root = tk.Tk()
@@ -30,6 +32,16 @@ class Visualizer:
         self.lamport_tmstps = {}
         self.vector_tmstps = {}
         self.cursors = {}
+        self.timer = Visualizer.timer   # délai en mode auto (secondes)
+        self.step_mode = True           # True = pas à pas
+        self._step_var = tk.IntVar(value=0)
+
+        self.next_btn = tk.Button(self.root, text="Next", command=self.next_step)
+        self.next_btn.pack()
+
+        self.mode_btn = tk.Button(self.root, text="Auto", command=self.toggle_mode)
+        self.mode_btn.pack()
+
 
 
     def set_all_proccess(self, all_process:dict):
@@ -69,8 +81,10 @@ class Visualizer:
             self.graph_cnv.create_text(x, y-20, text=self._getTimestamp(process), fill ="blue", font="Arial 14")
             self.cursors[process][0] += self.process_line_width/self.max_events
             self.nb_events += 1
-            self.root.update()
-            time.sleep(2)
+            self.root.update_idletasks()
+            self.wait_step()
+
+
 
 
     def add_message(self, sender, receiver, message:str, events=None):  #events: tuple of str
@@ -102,6 +116,10 @@ class Visualizer:
             self.graph_cnv.create_text((x_r+x_s)/2, (y_r+y_s)/2, text=message, fill ="red", font="Arial 14 bold")
 
             self.nb_events += 2
+
+            self.root.update_idletasks()
+            self.wait_step()
+
 
 
     def _dot(self, canvas, center:tuple, radius=6, color='black'):
@@ -137,3 +155,23 @@ class Visualizer:
 
     def destroy(self):
         self.root.destroy()
+
+    def next_step(self):
+        self._step_var.set(self._step_var.get() + 1)
+
+    def toggle_mode(self):
+        self.step_mode = not self.step_mode
+        self.mode_btn.config(text="Auto" if self.step_mode else "Step-by-step")
+        # si on repasse en auto, on débloque tout de suite une éventuelle attente
+        if not self.step_mode:
+            self.next_step()
+
+    def wait_step(self):
+        """Attendre soit un clic Next (mode step), soit un délai (mode auto) sans bloquer l'UI."""
+        if self.step_mode:
+            self.root.wait_variable(self._step_var)  # bloque mais laisse l'UI active
+        else:
+            # mode auto: attendre self.timer secondes en gardant l'UI fluide
+            done = tk.BooleanVar(value=False)
+            self.root.after(int(self.timer * 1000), lambda: done.set(True))
+            self.root.wait_variable(done)
