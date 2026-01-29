@@ -1,4 +1,5 @@
 import tkinter as tk
+import time
 
 class Visualizer:
     """Tkinter interface for visualizing Global States and Distributed Snapshots of processes and their tasks."""
@@ -9,7 +10,7 @@ class Visualizer:
     events.extend([chr(i) for i in range(945,970)]) # greek letters
 
 
-    def __init__(self, display_vector_tmstps=False, max_events=10):
+    def __init__(self, display_vector_tmstps=False, max_events=15):
         self.root = tk.Tk()
         self.root.title("Chandy-Lamport Algorithm")
         self.root.geometry(f"{Visualizer.width}x{Visualizer.height}")
@@ -68,6 +69,8 @@ class Visualizer:
             self.graph_cnv.create_text(x, y-20, text=self._getTimestamp(process), fill ="blue", font="Arial 14")
             self.cursors[process][0] += self.process_line_width/self.max_events
             self.nb_events += 1
+            self.root.update()
+            time.sleep(2)
 
 
     def add_message(self, sender, receiver, message:str, events=None):  #events: tuple of str

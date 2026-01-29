@@ -49,12 +49,12 @@ def main():
             sim.run()
             visualizer.run()
 
-    # Default example
     except Exception as e:
         print(e)
 
         visualizer.destroy()
         visualizer2 = Visualizer()
+        visualizer2.run()
         sim = Simulator(visualizer2)
 
         # create processes
@@ -97,7 +97,6 @@ def main():
 
         visualizer2.set_all_proccess({1: "P1", 2: "P2", 3: "P3", 4: "P4"})
         sim.run()
-        visualizer2.run()
 
 
 if __name__ == "__main__":
