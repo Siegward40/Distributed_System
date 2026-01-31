@@ -27,6 +27,9 @@ class Process:
             channel = self.channels_out[receiver_id]
             delay = 1
             self.simulator.schedule_send(self, receiver_id, message, delay)
+            if self.visualizer:
+                receiver = self.simulator.processes[receiver_id]
+                self.visualizer.add_message(self, receiver, message)
 
     def initiate_snapshot(self):
         self.snapshot_initiated = True
@@ -60,6 +63,6 @@ class Process:
         self.state += 1
         if self.visualizer:
             sender = self.simulator.processes[sender_id]
-            self.visualizer.add_message(sender, self, message)
+            self.visualizer.receiving_message(sender, self, message)
         popped = ch.queue.popleft()
         assert popped == message

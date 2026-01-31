@@ -29,7 +29,7 @@ class Terminal:
         self.terminal = tk.Text(self.root, font="Courier 10", bg="black", fg="white", insertbackground="white")
         self.terminal.pack()
         try: self.loadFile("default_terminal")
-        except: pass
+        except: self.terminal.insert("1.0", "use lamport\nP1,P2,P3,P4\nP1: 1 compute, 2 compute, 3 send P2 m1, 4 send P3 m2\nP2: 2 compute, 5 compute, 7 send P1 m4\nP3: 6 compute, 7 send P4 m3\nP4: 9 compute, 10 send P1 m5")
 
         buttons = tk.Frame()
         buttons.pack()

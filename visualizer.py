@@ -4,8 +4,6 @@ import time
 class Visualizer:
     """Tkinter interface for visualizing Global States and Distributed Snapshots of processes and their tasks."""
 
-    width = 1600
-    height = 800
     events = [chr(i) for i in range(97,123)]        # letters a to z
     events.extend([chr(i) for i in range(945,970)]) # greek letters
 
@@ -15,16 +13,21 @@ class Visualizer:
     def __init__(self, display_vector_tmstps=False, max_events=15):
         self.root = tk.Tk()
         self.root.title("Chandy-Lamport Algorithm")
-        self.root.geometry(f"{Visualizer.width}x{Visualizer.height}")
+        self.w_width = self.root.winfo_screenwidth()
+        self.w_height = self.root.winfo_screenheight()
+        self.root.state('zoomed')
         tk.Label(self.root, text="Chandy-Lamport Algorithm", font="Arial 20").pack()
 
         self.display_vector_tmstps = display_vector_tmstps # False for Lamport's clock, True for vector clock
         self.max_events = max_events
 
-        self.graph_cnv = tk.Canvas(self.root, width=0.9*Visualizer.width, height=0.8*Visualizer.height, bg="white")
-        self.graph_cnv.pack(padx=0.05*Visualizer.width)
+        self.graph_cnv = tk.Canvas(self.root, width=0.9*self.w_width, height=0.8*self.w_height, bg="white")
+        self.graph_cnv.pack(padx=0.05*self.w_width)
         self.cnv_width = int(self.graph_cnv['width'])
         self.cnv_height = int(self.graph_cnv['height'])
+        self.graph_cnv.create_text(0.25*self.cnv_width, 0.97*self.cnv_height, text="→ message in transit", fill ="orange", font="Arial 16")
+        self.graph_cnv.create_text(0.5*self.cnv_width, 0.97*self.cnv_height, text="→ message received", fill ="red", font="Arial 16")
+        self.graph_cnv.create_text(0.75*self.cnv_width, 0.97*self.cnv_height, text="---> consistent cut", fill ="blue", font="Arial 16")
 
         self.process_line_width = 0
         self.nb_events = 0
@@ -32,6 +35,7 @@ class Visualizer:
         self.lamport_tmstps = {}
         self.vector_tmstps = {}
         self.cursors = {}
+        self.in_transit = {}
         self.timer = Visualizer.timer   # délai en mode auto (secondes)
         self.step_mode = True           # True = pas à pas
         self._step_var = tk.IntVar(value=0)
@@ -85,41 +89,65 @@ class Visualizer:
             self.wait_step()
 
 
-
-
-    def add_message(self, sender, receiver, message:str, events=None):  #events: tuple of str
+    def add_message(self, sender, receiver, message:str, event=None):  #events: tuple of str
         if sender in self.cursors and receiver in self.cursors:
 
-            if not events:
-                events = (Visualizer.events[self.nb_events], Visualizer.events[self.nb_events+1])
+            if not event:
+                event = Visualizer.events[self.nb_events]
 
             # sender event
             self._incrTimestamp(sender)
             x_s = self.cursors[sender][0]
             y_s = self.cursors[sender][1]
             self._dot(self.graph_cnv, (x_s,y_s))
-            self.graph_cnv.create_text(x_s, y_s+20, text=events[0], fill ="black", font="Arial 14")
+            self.graph_cnv.create_text(x_s, y_s+20, text=event, fill ="black", font="Arial 14")
             self.graph_cnv.create_text(x_s, y_s-20, text=self._getTimestamp(sender), fill ="blue", font="Arial 14")
             self.cursors[sender][0] += self.process_line_width/self.max_events
 
-            # receiver event
-            self._incrTimestamp(receiver, sender)
+            # receiver event -> display after receiving in receiving_message
             x_r = max(self.cursors[receiver][0], x_s+0.3*self.process_line_width/self.max_events)
             y_r = self.cursors[receiver][1]
-            self._dot(self.graph_cnv, (x_r,y_r))
-            self.graph_cnv.create_text(x_r, y_r+20, text=events[1], fill ="black", font="Arial 14")
-            self.graph_cnv.create_text(x_r, y_r-20, text=self._getTimestamp(receiver), fill ="blue", font="Arial 14")
-            self.cursors[receiver][0] = x_r + self.process_line_width/self.max_events
 
             # message
-            self.graph_cnv.create_line((x_s,y_s), (x_r,y_r), width=3, arrow='last')
-            self.graph_cnv.create_text((x_r+x_s)/2, (y_r+y_s)/2, text=message, fill ="red", font="Arial 14 bold")
+            x_r_temp = x_r-5
+            y_r_temp = y_r-30 if y_r > y_s else y_r+30
+            self.in_transit[(sender,receiver,message)] = (self.graph_cnv.create_line((x_s,y_s), (x_r_temp,y_r_temp), width=3, fill ="orange", arrow='last'), (x_s,y_s), (self.lamport_tmstps[sender], self.vector_tmstps[sender]))
+            self.graph_cnv.create_text((x_r+x_s)/2, (y_r+y_s)/2, text=message, fill ="green", font="Arial 14 bold")
 
-            self.nb_events += 2
+            self.nb_events += 1
 
             self.root.update_idletasks()
             self.wait_step()
 
+
+    def receiving_message(self, sender, receiver, message:str, event=None):
+        if sender in self.cursors and receiver in self.cursors and (sender,receiver,message) in self.in_transit:
+
+            if not event:
+                event = Visualizer.events[self.nb_events]
+
+            x_s,y_s = self.in_transit[(sender,receiver,message)][1]
+            tmstps = self.in_transit[(sender,receiver,message)][2]
+
+            # receiver event
+            self._incrTimestamp(receiver, tmstps)
+            x_r = max(self.cursors[receiver][0], x_s+0.3*self.process_line_width/self.max_events)
+            y_r = self.cursors[receiver][1]
+            self._dot(self.graph_cnv, (x_r,y_r))
+            self.graph_cnv.create_text(x_r, y_r+20, text=event, fill ="black", font="Arial 14")
+            self.graph_cnv.create_text(x_r, y_r-20, text=self._getTimestamp(receiver), fill ="blue", font="Arial 14")
+
+            line = self.in_transit[(sender,receiver,message)][0]
+            self.graph_cnv.itemconfig(line, fill="red")
+            self.graph_cnv.coords(line, x_s, y_s, x_r, y_r)
+            self.in_transit.pop((sender,receiver,message))
+
+            self.cursors[receiver][0] = x_r + self.process_line_width/self.max_events
+
+            self.nb_events += 1
+
+            self.root.update_idletasks()
+            self.wait_step()
 
 
     def _dot(self, canvas, center:tuple, radius=6, color='black'):
@@ -129,16 +157,17 @@ class Visualizer:
         return canvas.create_oval(A, B, fill=color, outline=color)
 
 
-    def _incrTimestamp(self, process, other_process=None):
-        # define other_process as sender when process RECEIVE message (NOT SEND)
+    def _incrTimestamp(self, process, sender_tmstps=None):
+        # define sender_tmstps as sender's timestamps when process RECEIVE message (NOT SEND)
+        # sender_tmstps = (lamport_timestamps, vector_timestamps)
         if self.display_vector_tmstps:
-            if other_process:
+            if sender_tmstps:
                 for i in range(len(self.process_list)):
-                    self.vector_tmstps[process][i] = max(self.vector_tmstps[process][i], self.vector_tmstps[other_process][i])
+                    self.vector_tmstps[process][i] = max(self.vector_tmstps[process][i], sender_tmstps[1][i])
             self.vector_tmstps[process][self.process_list.index(process)] += 1
         else:
-            if other_process:
-                self.lamport_tmstps[process] = max(self.lamport_tmstps[process], self.lamport_tmstps[other_process]) + 1
+            if sender_tmstps:
+                self.lamport_tmstps[process] = max(self.lamport_tmstps[process], sender_tmstps[0]) + 1
             else:
                 self.lamport_tmstps[process] += 1
 
